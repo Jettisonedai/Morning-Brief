@@ -67,7 +67,7 @@ body{font-family:Georgia,'Times New Roman',Times,serif;background:#fff;color:#11
 
 <script>
 /* ── PASTE YOUR GNEWS KEY BETWEEN THE QUOTES BELOW ── */
-var GNEWS_KEY = '94b1e92a5babda8656a091dc3752ab23';
+var NEWSDATA_KEY = 'pub_42049543cd3c4f4abfb029c3e4efe538';
 
 /* ── WMO weather codes ── */
 var WMO={0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Heavy snow showers',95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'};
@@ -203,23 +203,19 @@ function loadStocks(){
   for(var i=0;i<TICKERS.length;i++){loadTicker(TICKERS[i],LABELS[i]);}
 }
 
-/* ── News (GNews) ── */
+/* ── News (NewsData.io) ── */
 function loadNews(){
-  if(GNEWS_KEY==='YOUR_GNEWS_KEY_HERE'){
-    document.getElementById('news').innerHTML='<span class="err">Paste your GNews API key into the file to enable headlines.</span>';
-    return;
-  }
-  var url='https://gnews.io/api/v4/top-headlines?lang=en&country=us&max=5&apikey='+GNEWS_KEY;
+  var url='https://newsdata.io/api/1/news?apikey='+NEWSDATA_KEY+'&country=us&language=en&size=5';
   getJSON(url,function(err,data){
-    if(err||!data||!data.articles){
-      document.getElementById('news').innerHTML='<span class="err">Headlines unavailable. Key may still be activating \u2014 try again in a few minutes.</span>';
+    if(err||!data||!data.results||!data.results.length){
+      document.getElementById('news').innerHTML='<span class="err">Headlines unavailable. Try refreshing in a moment.</span>';
       return;
     }
     var html='';
-    var arts=data.articles.slice(0,5);
+    var arts=data.results.slice(0,5);
     for(var i=0;i<arts.length;i++){
       var a=arts[i];
-      var src=a.source&&a.source.name?a.source.name:'';
+      var src=a.source_id||a.source_name||'';
       var title=a.title||'';
       if(title.length>80)title=title.substring(0,80)+'...';
       html+='<div class="news-item"><div class="news-source">'+src+'</div><div class="news-hed">'+title+'</div></div>';
