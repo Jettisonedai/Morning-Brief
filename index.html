@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning Brief — Fairfield, CT</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Georgia,'Times New Roman',Times,serif;background:#fff;color:#111;max-width:600px;margin:0 auto;padding:8px;}
+.head{text-align:center;padding:12px 8px 8px;border-bottom:3px double #111;}
+.head-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-family:Arial,sans-serif;color:#555;margin-bottom:3px;}
+.head-date{font-size:22px;font-weight:700;line-height:1.1;}
+.head-time{font-size:12px;color:#555;font-family:Arial,sans-serif;margin-top:3px;}
+.body{display:table;width:100%;border-collapse:collapse;}
+.col{display:table-cell;width:50%;padding:10px;vertical-align:top;}
+.col-left{border-right:1px solid #ccc;}
+.sec-head{font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-family:Arial,sans-serif;color:#555;border-bottom:1px solid #ccc;padding-bottom:3px;margin-bottom:8px;}
+.weather-temp{font-size:38px;font-weight:700;line-height:1;}
+.weather-desc{font-size:13px;color:#333;font-family:Arial,sans-serif;margin-top:3px;}
+.weather-detail{font-size:11px;color:#777;font-family:Arial,sans-serif;margin-top:4px;}
+.quote-text{font-style:italic;font-size:12px;line-height:1.5;border-left:2px solid #111;padding-left:8px;margin-bottom:5px;}
+.quote-attr{font-size:10px;color:#555;font-family:Arial,sans-serif;}
+.stocks{margin-top:0;}
+.stock-row{display:table;width:100%;font-size:12px;margin-bottom:4px;font-family:Arial,sans-serif;}
+.stock-sym{display:table-cell;font-weight:700;}
+.stock-price{display:table-cell;text-align:center;}
+.stock-chg{display:table-cell;text-align:right;}
+.up{color:#1a5c1a;}.dn{color:#8b0000;}
+.news-item{border-bottom:1px solid #ddd;padding:6px 0;}
+.news-item:last-child{border-bottom:none;}
+.news-source{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:#777;font-family:Arial,sans-serif;margin-bottom:2px;}
+.news-hed{font-size:12px;font-weight:700;line-height:1.3;}
+.footer{border-top:3px double #111;padding:5px 8px;text-align:center;font-size:9px;font-family:Arial,sans-serif;color:#777;letter-spacing:.1em;text-transform:uppercase;margin-top:0;}
+.spacer{height:10px;}
+.loading{font-size:12px;color:#777;font-family:Arial,sans-serif;}
+.err{font-size:11px;color:#8b0000;font-family:Arial,sans-serif;}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <div class="head-label">Morning Brief &mdash; Fairfield, CT</div>
+  <div class="head-date" id="hdate"></div>
+  <div class="head-time" id="htime"></div>
+</div>
+
+<div class="body">
+  <div class="col col-left">
+
+    <div class="sec-head">Weather</div>
+    <div class="weather-temp" id="w-temp">&mdash;</div>
+    <div class="weather-desc" id="w-desc">Loading...</div>
+    <div class="weather-detail" id="w-detail"></div>
+
+    <div class="spacer"></div>
+    <div class="sec-head">Quote of the Day</div>
+    <div class="quote-text" id="q-text">Loading...</div>
+    <div class="quote-attr" id="q-attr"></div>
+
+    <div class="spacer"></div>
+    <div class="sec-head">Markets</div>
+    <div class="stocks" id="stocks"><div class="loading">Loading...</div></div>
+
+  </div>
+  <div class="col col-right">
+
+    <div class="sec-head">Headlines</div>
+    <div id="news"><div class="loading">Loading...</div></div>
+
+  </div>
+</div>
+
+<div class="footer">Refreshes on each page load &bull; Fairfield, CT</div>
+
+<script>
+function setClocks(){
+  var now=new Date();
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var h=now.getHours(),m=now.getMinutes();
+  var ampm=h>=12?'PM':'AM';
+  var h12=h%12||12;
+  var ts=h12+':'+(m<10?'0':'')+m+' '+ampm;
+  var ds=days[now.getDay()]+', '+months[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
+  document.getElementById('hdate').innerHTML=ds;
+  document.getElementById('htime').innerHTML=ts;
+}
+setClocks();
+
+function chgClass(v){return v>=0?'up':'dn';}
+function chgStr(v){return(v>=0?'+':'')+v.toFixed(2)+'%';}
+
+function render(d){
+  if(!d){
+    var ids=['w-desc','q-text','stocks','news'];
+    for(var i=0;i<ids.length;i++){
+      var el=document.getElementById(ids[i]);
+      if(el)el.innerHTML='<span class="err">Could not load. Check connection.</span>';
+    }
+    return;
+  }
+  var w=d.weather||{};
+  var q=d.quote||{};
+  var stocks=d.stocks||[];
+  var news=d.headlines||[];
+
+  var wt=document.getElementById('w-temp');
+  if(wt)wt.innerHTML=w.temp?Math.round(w.temp)+'&deg;F':'&mdash;';
+  var wd=document.getElementById('w-desc');
+  if(wd)wd.textContent=w.desc||'';
+  var wdd=document.getElementById('w-detail');
+  if(wdd)wdd.textContent=(w.humidity?'Humidity '+w.humidity:'')+(w.wind?' &middot; Wind '+w.wind:'');
+
+  var qt=document.getElementById('q-text');
+  if(qt)qt.textContent=q.text?'"'+q.text+'"':'';
+  var qa=document.getElementById('q-attr');
+  if(qa)qa.textContent=q.author?'\u2014 '+q.author:'';
+
+  var sEl=document.getElementById('stocks');
+  if(sEl){
+    var sh='';
+    for(var i=0;i<stocks.length;i++){
+      var s=stocks[i];
+      var price=s.price>1000?s.price.toLocaleString():s.price.toFixed(2);
+      sh+='<div class="stock-row"><span class="stock-sym">'+s.sym+'</span><span class="stock-price">'+price+'</span><span class="stock-chg '+chgClass(s.change)+'">'+chgStr(s.change)+'</span></div>';
+    }
+    sEl.innerHTML=sh||'<span class="err">No data</span>';
+  }
+
+  var nEl=document.getElementById('news');
+  if(nEl){
+    var nh='';
+    for(var i=0;i<news.length;i++){
+      var n=news[i];
+      nh+='<div class="news-item"><div class="news-source">'+n.source+'</div><div class="news-hed">'+n.title+'</div></div>';
+    }
+    nEl.innerHTML=nh||'<span class="err">No headlines</span>';
+  }
+}
+
+function fetchData(){
+  var xhr=new XMLHttpRequest();
+  xhr.open('POST','https://api.anthropic.com/v1/messages',true);
+  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState===4){
+      try{
+        var data=JSON.parse(xhr.responseText);
+        var textBlock=null;
+        if(data.content){
+          for(var i=0;i<data.content.length;i++){
+            if(data.content[i].type==='text'){textBlock=data.content[i];break;}
+          }
+        }
+        if(!textBlock)throw new Error('no text');
+        var raw=textBlock.text.replace(/```json|```/g,'').trim();
+        render(JSON.parse(raw));
+      }catch(e){render(null);}
+    }
+  };
+  xhr.onerror=function(){render(null);};
+  var prompt='Return ONLY valid JSON, no markdown, no backticks. For Fairfield CT today:\n{\n  "weather":{"temp":number_fahrenheit,"desc":"short condition","humidity":"XX%","wind":"XX mph"},\n  "quote":{"text":"inspiring quote under 18 words","author":"Name"},\n  "stocks":[{"sym":"SPY","price":number,"change":number_percent},{"sym":"QQQ","price":number,"change":number_percent},{"sym":"BTC","price":number,"change":number_percent},{"sym":"DJI","price":number,"change":number_percent}],\n  "headlines":[{"title":"headline under 12 words","source":"outlet"},{"title":"headline under 12 words","source":"outlet"},{"title":"headline under 12 words","source":"outlet"},{"title":"headline under 12 words","source":"outlet"}]\n}';
+  xhr.send(JSON.stringify({
+    model:'claude-sonnet-4-20250514',
+    max_tokens:1000,
+    messages:[{role:'user',content:prompt}],
+    tools:[{type:'web_search_20250305',name:'web_search'}]
+  }));
+}
+
+fetchData();
+</script>
+</body>
+</html>
