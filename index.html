@@ -66,140 +66,165 @@ body{font-family:Georgia,'Times New Roman',Times,serif;background:#fff;color:#11
 <div class="footer">Refreshes on each page load &bull; Fairfield, CT</div>
 
 <script>
+/* ── PASTE YOUR GNEWS KEY BETWEEN THE QUOTES BELOW ── */
 var GNEWS_KEY = '94b1e92a5babda8656a091dc3752ab23';
 
-var WMO = {
-  0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
-  45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
-  61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
-  77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',
-  85:'Snow showers',86:'Heavy snow showers',95:'Thunderstorm',
-  96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'
-};
+/* ── WMO weather codes ── */
+var WMO={0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Heavy snow showers',95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'};
 
-function setClocks() {
-  var now = new Date();
-  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var h = now.getHours(), m = now.getMinutes();
-  var ampm = h >= 12 ? 'PM' : 'AM';
-  var h12 = h % 12 || 12;
-  var ts = h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
-  var ds = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
-  document.getElementById('hdate').innerHTML = ds;
-  document.getElementById('htime').innerHTML = ts;
+/* ── Rotating quotes (no API needed) ── */
+var QUOTES=[
+  {q:'The secret of getting ahead is getting started.',a:'Mark Twain'},
+  {q:'It does not matter how slowly you go as long as you do not stop.',a:'Confucius'},
+  {q:'Life is what happens when you\'re busy making other plans.',a:'John Lennon'},
+  {q:'The way to get started is to quit talking and begin doing.',a:'Walt Disney'},
+  {q:'In the middle of every difficulty lies opportunity.',a:'Albert Einstein'},
+  {q:'It always seems impossible until it\'s done.',a:'Nelson Mandela'},
+  {q:'Do one thing every day that scares you.',a:'Eleanor Roosevelt'},
+  {q:'Well done is better than well said.',a:'Benjamin Franklin'},
+  {q:'The best time to plant a tree was 20 years ago. The second best time is now.',a:'Chinese Proverb'},
+  {q:'An unexamined life is not worth living.',a:'Socrates'},
+  {q:'Spread love everywhere you go.',a:'Mother Teresa'},
+  {q:'When you reach the end of your rope, tie a knot in it and hang on.',a:'Franklin D. Roosevelt'},
+  {q:'Always remember that you are absolutely unique. Just like everyone else.',a:'Margaret Mead'},
+  {q:'Do not go where the path may lead, go instead where there is no path and leave a trail.',a:'Ralph Waldo Emerson'},
+  {q:'You will face many defeats in life, but never let yourself be defeated.',a:'Maya Angelou'},
+  {q:'The greatest glory in living lies not in never falling, but in rising every time we fall.',a:'Nelson Mandela'},
+  {q:'In the end, it\'s not the years in your life that count. It\'s the life in your years.',a:'Abraham Lincoln'},
+  {q:'Never let the fear of striking out keep you from playing the game.',a:'Babe Ruth'},
+  {q:'Life is either a daring adventure or nothing at all.',a:'Helen Keller'},
+  {q:'You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.',a:'Dr. Seuss'},
+  {q:'If life were predictable it would cease to be life and be without flavor.',a:'Eleanor Roosevelt'},
+  {q:'If you look at what you have in life, you\'ll always have more.',a:'Oprah Winfrey'},
+  {q:'If you want to live a happy life, tie it to a goal, not to people or things.',a:'Albert Einstein'},
+  {q:'Never let the fear of striking out keep you from playing the game.',a:'Babe Ruth'},
+  {q:'Money and success don\'t change people; they merely amplify what is already there.',a:'Will Smith'},
+  {q:'Your time is limited, so don\'t waste it living someone else\'s life.',a:'Steve Jobs'},
+  {q:'Not how long, but how well you have lived is the main thing.',a:'Seneca'},
+  {q:'If life were predictable it would cease to be life.',a:'Eleanor Roosevelt'},
+  {q:'The whole secret of a successful life is to find out what is one\'s destiny to do, and then do it.',a:'Henry Ford'},
+  {q:'Success is not final; failure is not fatal: It is the courage to continue that counts.',a:'Winston Churchill'}
+];
+
+/* ── Clock ── */
+function setClocks(){
+  var now=new Date();
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var h=now.getHours(),m=now.getMinutes();
+  var ampm=h>=12?'PM':'AM';
+  var h12=h%12||12;
+  var ts=h12+':'+(m<10?'0':'')+m+' '+ampm;
+  var ds=days[now.getDay()]+', '+months[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
+  document.getElementById('hdate').innerHTML=ds;
+  document.getElementById('htime').innerHTML=ts;
 }
 setClocks();
 
-function chgClass(v) { return v >= 0 ? 'up' : 'dn'; }
-function chgStr(v) { return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; }
-
-function getJSON(url, cb) {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, true);
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState === 4) {
-      try { cb(null, JSON.parse(xhr.responseText)); }
-      catch(e) { cb(e, null); }
+/* ── Helpers ── */
+function chgClass(v){return v>=0?'up':'dn';}
+function chgStr(v){return(v>=0?'+':'')+v.toFixed(2)+'%';}
+function getJSON(url,cb){
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET',url,true);
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState===4){
+      try{cb(null,JSON.parse(xhr.responseText));}
+      catch(e){cb(e,null);}
     }
   };
-  xhr.onerror = function() { cb(new Error('network'), null); };
+  xhr.onerror=function(){cb(new Error('net'),null);};
   xhr.send();
 }
 
-function loadWeather() {
-  var url = 'https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2618&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America/New_York';
-  getJSON(url, function(err, data) {
-    if (err || !data || !data.current) {
-      document.getElementById('w-desc').innerHTML = '<span class="err">Weather unavailable</span>';
+/* ── Weather (Open-Meteo, free, no key) ── */
+function loadWeather(){
+  var url='https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2618&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America/New_York';
+  getJSON(url,function(err,data){
+    if(err||!data||!data.current){
+      document.getElementById('w-desc').innerHTML='<span class="err">Weather unavailable</span>';
       return;
     }
-    var c = data.current;
-    document.getElementById('w-temp').innerHTML = Math.round(c.temperature_2m) + '&deg;F';
-    document.getElementById('w-desc').textContent = WMO[c.weather_code] || 'Unknown';
-    document.getElementById('w-detail').textContent = 'Humidity ' + c.relative_humidity_2m + '% \u00b7 Wind ' + Math.round(c.wind_speed_10m) + ' mph';
+    var c=data.current;
+    document.getElementById('w-temp').innerHTML=Math.round(c.temperature_2m)+'&deg;F';
+    document.getElementById('w-desc').textContent=WMO[c.weather_code]||'Unknown';
+    document.getElementById('w-detail').textContent='Humidity '+c.relative_humidity_2m+'% \u00b7 Wind '+Math.round(c.wind_speed_10m)+' mph';
   });
 }
 
-function loadQuote() {
-  var target = encodeURIComponent('https://zenquotes.io/api/today');
-  var url = 'https://api.allorigins.win/get?url=' + target;
-  getJSON(url, function(err, wrapper) {
-    try {
-      var data = JSON.parse(wrapper.contents);
-      var q = data[0];
-      document.getElementById('q-text').textContent = '\u201c' + q.q + '\u201d';
-      document.getElementById('q-attr').textContent = '\u2014 ' + q.a;
-    } catch(e) {
-      document.getElementById('q-text').innerHTML = '<span class="err">Quote unavailable</span>';
-    }
-  });
+/* ── Quote (local rotating list, no API) ── */
+function loadQuote(){
+  var today=new Date();
+  var idx=(today.getFullYear()*366+today.getMonth()*31+today.getDate())%QUOTES.length;
+  var q=QUOTES[idx];
+  document.getElementById('q-text').textContent='\u201c'+q.q+'\u201d';
+  document.getElementById('q-attr').textContent='\u2014 '+q.a;
 }
 
-var TICKERS = ['SPY','QQQ','BTC-USD','^DJI'];
-var LABELS  = ['SPY','QQQ','BTC','DJI'];
-var loaded  = {};
-var done    = 0;
+/* ── Stocks (Frankfurter for forex as proxy check + direct Yahoo) ── */
+/* Using a reliable CORS proxy: corsproxy.io */
+var TICKERS=['SPY','QQQ','BTC-USD','^DJI'];
+var LABELS=['SPY','QQQ','BTC','DJI'];
+var loaded={};
+var done=0;
 
-function renderStocks() {
-  var el = document.getElementById('stocks');
-  var html = '';
-  for (var i = 0; i < LABELS.length; i++) {
-    var sym = LABELS[i];
-    var d = loaded[sym];
-    if (!d) continue;
-    var price = d.price > 1000 ? d.price.toLocaleString(undefined,{maximumFractionDigits:0}) : d.price.toFixed(2);
-    html += '<div class="stock-row"><span class="stock-sym">' + sym + '</span><span class="stock-price">' + price + '</span><span class="stock-chg ' + chgClass(d.chg) + '">' + chgStr(d.chg) + '</span></div>';
+function renderStocks(){
+  var el=document.getElementById('stocks');
+  var html='';
+  var count=0;
+  for(var i=0;i<LABELS.length;i++){
+    var sym=LABELS[i];
+    var d=loaded[sym];
+    if(!d)continue;
+    count++;
+    var price=d.price>1000?d.price.toLocaleString(undefined,{maximumFractionDigits:0}):d.price.toFixed(2);
+    html+='<div class="stock-row"><span class="stock-sym">'+sym+'</span><span class="stock-price">'+price+'</span><span class="stock-chg '+chgClass(d.chg)+'">'+chgStr(d.chg)+'</span></div>';
   }
-  el.innerHTML = html || '<span class="err">Markets unavailable</span>';
+  el.innerHTML=count>0?html:'<span class="err">Markets unavailable</span>';
 }
 
-function loadTicker(ticker, label) {
-  var target = encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/' + ticker + '?interval=1d&range=1d');
-  var url = 'https://api.allorigins.win/get?url=' + target;
-  getJSON(url, function(err, wrapper) {
+function loadTicker(ticker,label){
+  var yurl='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1d&range=1d';
+  var url='https://corsproxy.io/?'+encodeURIComponent(yurl);
+  getJSON(url,function(err,data){
     done++;
-    try {
-      var data = JSON.parse(wrapper.contents);
-      var meta = data.chart.result[0].meta;
-      var price = meta.regularMarketPrice;
-      var prev  = meta.chartPreviousClose || meta.previousClose;
-      var chg   = prev ? ((price - prev) / prev * 100) : 0;
-      loaded[label] = { price: price, chg: chg };
-    } catch(e) {
-      loaded[label] = null;
-    }
-    if (done === TICKERS.length) renderStocks();
+    try{
+      var meta=data.chart.result[0].meta;
+      var price=meta.regularMarketPrice;
+      var prev=meta.chartPreviousClose||meta.previousClose;
+      var chg=prev?((price-prev)/prev*100):0;
+      loaded[label]={price:price,chg:chg};
+    }catch(e){loaded[label]=null;}
+    if(done===TICKERS.length)renderStocks();
   });
 }
 
-function loadStocks() {
-  for (var i = 0; i < TICKERS.length; i++) {
-    loadTicker(TICKERS[i], LABELS[i]);
-  }
+function loadStocks(){
+  for(var i=0;i<TICKERS.length;i++){loadTicker(TICKERS[i],LABELS[i]);}
 }
 
-function loadNews() {
-  if (GNEWS_KEY === 'YOUR_GNEWS_KEY_HERE') {
-    document.getElementById('news').innerHTML = '<span class="err">Add your GNews key to the file (see setup instructions).</span>';
+/* ── News (GNews) ── */
+function loadNews(){
+  if(GNEWS_KEY==='YOUR_GNEWS_KEY_HERE'){
+    document.getElementById('news').innerHTML='<span class="err">Paste your GNews API key into the file to enable headlines.</span>';
     return;
   }
-  var url = 'https://gnews.io/api/v4/top-headlines?lang=en&country=us&max=5&apikey=' + GNEWS_KEY;
-  getJSON(url, function(err, data) {
-    if (err || !data || !data.articles) {
-      document.getElementById('news').innerHTML = '<span class="err">Headlines unavailable</span>';
+  var url='https://gnews.io/api/v4/top-headlines?lang=en&country=us&max=5&apikey='+GNEWS_KEY;
+  getJSON(url,function(err,data){
+    if(err||!data||!data.articles){
+      document.getElementById('news').innerHTML='<span class="err">Headlines unavailable. Key may still be activating \u2014 try again in a few minutes.</span>';
       return;
     }
-    var html = '';
-    var articles = data.articles.slice(0, 5);
-    for (var i = 0; i < articles.length; i++) {
-      var a = articles[i];
-      var src = a.source && a.source.name ? a.source.name : '';
-      var title = a.title || '';
-      if (title.length > 80) title = title.substring(0, 80) + '...';
-      html += '<div class="news-item"><div class="news-source">' + src + '</div><div class="news-hed">' + title + '</div></div>';
+    var html='';
+    var arts=data.articles.slice(0,5);
+    for(var i=0;i<arts.length;i++){
+      var a=arts[i];
+      var src=a.source&&a.source.name?a.source.name:'';
+      var title=a.title||'';
+      if(title.length>80)title=title.substring(0,80)+'...';
+      html+='<div class="news-item"><div class="news-source">'+src+'</div><div class="news-hed">'+title+'</div></div>';
     }
-    document.getElementById('news').innerHTML = html;
+    document.getElementById('news').innerHTML=html;
   });
 }
 
