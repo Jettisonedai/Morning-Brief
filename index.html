@@ -20,8 +20,7 @@ body{font-family:Georgia,'Times New Roman',Times,serif;background:#fff;color:#11
 .weather-detail{font-size:11px;color:#777;font-family:Arial,sans-serif;margin-top:4px;}
 .quote-text{font-style:italic;font-size:12px;line-height:1.5;border-left:2px solid #111;padding-left:8px;margin-bottom:5px;}
 .quote-attr{font-size:10px;color:#555;font-family:Arial,sans-serif;}
-.stocks{margin-top:0;}
-.stock-row{display:table;width:100%;font-size:12px;margin-bottom:4px;font-family:Arial,sans-serif;}
+.stock-row{display:table;width:100%;font-size:12px;margin-bottom:5px;font-family:Arial,sans-serif;}
 .stock-sym{display:table-cell;font-weight:700;}
 .stock-price{display:table-cell;text-align:center;}
 .stock-chg{display:table-cell;text-align:right;}
@@ -46,129 +45,168 @@ body{font-family:Georgia,'Times New Roman',Times,serif;background:#fff;color:#11
 
 <div class="body">
   <div class="col col-left">
-
     <div class="sec-head">Weather</div>
     <div class="weather-temp" id="w-temp">&mdash;</div>
-    <div class="weather-desc" id="w-desc">Loading...</div>
+    <div class="weather-desc" id="w-desc"><span class="loading">Loading...</span></div>
     <div class="weather-detail" id="w-detail"></div>
-
     <div class="spacer"></div>
     <div class="sec-head">Quote of the Day</div>
-    <div class="quote-text" id="q-text">Loading...</div>
+    <div class="quote-text" id="q-text"><span class="loading">Loading...</span></div>
     <div class="quote-attr" id="q-attr"></div>
-
     <div class="spacer"></div>
     <div class="sec-head">Markets</div>
-    <div class="stocks" id="stocks"><div class="loading">Loading...</div></div>
-
+    <div id="stocks"><div class="loading">Loading...</div></div>
   </div>
   <div class="col col-right">
-
     <div class="sec-head">Headlines</div>
     <div id="news"><div class="loading">Loading...</div></div>
-
   </div>
 </div>
 
 <div class="footer">Refreshes on each page load &bull; Fairfield, CT</div>
 
 <script>
-function setClocks(){
-  var now=new Date();
-  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var h=now.getHours(),m=now.getMinutes();
-  var ampm=h>=12?'PM':'AM';
-  var h12=h%12||12;
-  var ts=h12+':'+(m<10?'0':'')+m+' '+ampm;
-  var ds=days[now.getDay()]+', '+months[now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
-  document.getElementById('hdate').innerHTML=ds;
-  document.getElementById('htime').innerHTML=ts;
+var GNEWS_KEY = '94b1e92a5babda8656a091dc3752ab23';
+
+var WMO = {
+  0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+  45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
+  61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
+  77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',
+  85:'Snow showers',86:'Heavy snow showers',95:'Thunderstorm',
+  96:'Thunderstorm w/ hail',99:'Thunderstorm w/ heavy hail'
+};
+
+function setClocks() {
+  var now = new Date();
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var h = now.getHours(), m = now.getMinutes();
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  var h12 = h % 12 || 12;
+  var ts = h12 + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+  var ds = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+  document.getElementById('hdate').innerHTML = ds;
+  document.getElementById('htime').innerHTML = ts;
 }
 setClocks();
 
-function chgClass(v){return v>=0?'up':'dn';}
-function chgStr(v){return(v>=0?'+':'')+v.toFixed(2)+'%';}
+function chgClass(v) { return v >= 0 ? 'up' : 'dn'; }
+function chgStr(v) { return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; }
 
-function render(d){
-  if(!d){
-    var ids=['w-desc','q-text','stocks','news'];
-    for(var i=0;i<ids.length;i++){
-      var el=document.getElementById(ids[i]);
-      if(el)el.innerHTML='<span class="err">Could not load. Check connection.</span>';
-    }
-    return;
-  }
-  var w=d.weather||{};
-  var q=d.quote||{};
-  var stocks=d.stocks||[];
-  var news=d.headlines||[];
-
-  var wt=document.getElementById('w-temp');
-  if(wt)wt.innerHTML=w.temp?Math.round(w.temp)+'&deg;F':'&mdash;';
-  var wd=document.getElementById('w-desc');
-  if(wd)wd.textContent=w.desc||'';
-  var wdd=document.getElementById('w-detail');
-  if(wdd)wdd.textContent=(w.humidity?'Humidity '+w.humidity:'')+(w.wind?' &middot; Wind '+w.wind:'');
-
-  var qt=document.getElementById('q-text');
-  if(qt)qt.textContent=q.text?'"'+q.text+'"':'';
-  var qa=document.getElementById('q-attr');
-  if(qa)qa.textContent=q.author?'\u2014 '+q.author:'';
-
-  var sEl=document.getElementById('stocks');
-  if(sEl){
-    var sh='';
-    for(var i=0;i<stocks.length;i++){
-      var s=stocks[i];
-      var price=s.price>1000?s.price.toLocaleString():s.price.toFixed(2);
-      sh+='<div class="stock-row"><span class="stock-sym">'+s.sym+'</span><span class="stock-price">'+price+'</span><span class="stock-chg '+chgClass(s.change)+'">'+chgStr(s.change)+'</span></div>';
-    }
-    sEl.innerHTML=sh||'<span class="err">No data</span>';
-  }
-
-  var nEl=document.getElementById('news');
-  if(nEl){
-    var nh='';
-    for(var i=0;i<news.length;i++){
-      var n=news[i];
-      nh+='<div class="news-item"><div class="news-source">'+n.source+'</div><div class="news-hed">'+n.title+'</div></div>';
-    }
-    nEl.innerHTML=nh||'<span class="err">No headlines</span>';
-  }
-}
-
-function fetchData(){
-  var xhr=new XMLHttpRequest();
-  xhr.open('POST','https://api.anthropic.com/v1/messages',true);
-  xhr.setRequestHeader('Content-Type','application/json');
-  xhr.onreadystatechange=function(){
-    if(xhr.readyState===4){
-      try{
-        var data=JSON.parse(xhr.responseText);
-        var textBlock=null;
-        if(data.content){
-          for(var i=0;i<data.content.length;i++){
-            if(data.content[i].type==='text'){textBlock=data.content[i];break;}
-          }
-        }
-        if(!textBlock)throw new Error('no text');
-        var raw=textBlock.text.replace(/```json|```/g,'').trim();
-        render(JSON.parse(raw));
-      }catch(e){render(null);}
+function getJSON(url, cb) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      try { cb(null, JSON.parse(xhr.responseText)); }
+      catch(e) { cb(e, null); }
     }
   };
-  xhr.onerror=function(){render(null);};
-  var prompt='Return ONLY valid JSON, no markdown, no backticks. For Fairfield CT today:\n{\n  "weather":{"temp":number_fahrenheit,"desc":"short condition","humidity":"XX%","wind":"XX mph"},\n  "quote":{"text":"inspiring quote under 18 words","author":"Name"},\n  "stocks":[{"sym":"SPY","price":number,"change":number_percent},{"sym":"QQQ","price":number,"change":number_percent},{"sym":"BTC","price":number,"change":number_percent},{"sym":"DJI","price":number,"change":number_percent}],\n  "headlines":[{"title":"headline under 12 words","source":"outlet"},{"title":"headline under 12 words","source":"outlet"},{"title":"headline under 12 words","source":"outlet"},{"title":"headline under 12 words","source":"outlet"}]\n}';
-  xhr.send(JSON.stringify({
-    model:'claude-sonnet-4-20250514',
-    max_tokens:1000,
-    messages:[{role:'user',content:prompt}],
-    tools:[{type:'web_search_20250305',name:'web_search'}]
-  }));
+  xhr.onerror = function() { cb(new Error('network'), null); };
+  xhr.send();
 }
 
-fetchData();
+function loadWeather() {
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=41.1409&longitude=-73.2618&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America/New_York';
+  getJSON(url, function(err, data) {
+    if (err || !data || !data.current) {
+      document.getElementById('w-desc').innerHTML = '<span class="err">Weather unavailable</span>';
+      return;
+    }
+    var c = data.current;
+    document.getElementById('w-temp').innerHTML = Math.round(c.temperature_2m) + '&deg;F';
+    document.getElementById('w-desc').textContent = WMO[c.weather_code] || 'Unknown';
+    document.getElementById('w-detail').textContent = 'Humidity ' + c.relative_humidity_2m + '% \u00b7 Wind ' + Math.round(c.wind_speed_10m) + ' mph';
+  });
+}
+
+function loadQuote() {
+  var target = encodeURIComponent('https://zenquotes.io/api/today');
+  var url = 'https://api.allorigins.win/get?url=' + target;
+  getJSON(url, function(err, wrapper) {
+    try {
+      var data = JSON.parse(wrapper.contents);
+      var q = data[0];
+      document.getElementById('q-text').textContent = '\u201c' + q.q + '\u201d';
+      document.getElementById('q-attr').textContent = '\u2014 ' + q.a;
+    } catch(e) {
+      document.getElementById('q-text').innerHTML = '<span class="err">Quote unavailable</span>';
+    }
+  });
+}
+
+var TICKERS = ['SPY','QQQ','BTC-USD','^DJI'];
+var LABELS  = ['SPY','QQQ','BTC','DJI'];
+var loaded  = {};
+var done    = 0;
+
+function renderStocks() {
+  var el = document.getElementById('stocks');
+  var html = '';
+  for (var i = 0; i < LABELS.length; i++) {
+    var sym = LABELS[i];
+    var d = loaded[sym];
+    if (!d) continue;
+    var price = d.price > 1000 ? d.price.toLocaleString(undefined,{maximumFractionDigits:0}) : d.price.toFixed(2);
+    html += '<div class="stock-row"><span class="stock-sym">' + sym + '</span><span class="stock-price">' + price + '</span><span class="stock-chg ' + chgClass(d.chg) + '">' + chgStr(d.chg) + '</span></div>';
+  }
+  el.innerHTML = html || '<span class="err">Markets unavailable</span>';
+}
+
+function loadTicker(ticker, label) {
+  var target = encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/' + ticker + '?interval=1d&range=1d');
+  var url = 'https://api.allorigins.win/get?url=' + target;
+  getJSON(url, function(err, wrapper) {
+    done++;
+    try {
+      var data = JSON.parse(wrapper.contents);
+      var meta = data.chart.result[0].meta;
+      var price = meta.regularMarketPrice;
+      var prev  = meta.chartPreviousClose || meta.previousClose;
+      var chg   = prev ? ((price - prev) / prev * 100) : 0;
+      loaded[label] = { price: price, chg: chg };
+    } catch(e) {
+      loaded[label] = null;
+    }
+    if (done === TICKERS.length) renderStocks();
+  });
+}
+
+function loadStocks() {
+  for (var i = 0; i < TICKERS.length; i++) {
+    loadTicker(TICKERS[i], LABELS[i]);
+  }
+}
+
+function loadNews() {
+  if (GNEWS_KEY === 'YOUR_GNEWS_KEY_HERE') {
+    document.getElementById('news').innerHTML = '<span class="err">Add your GNews key to the file (see setup instructions).</span>';
+    return;
+  }
+  var url = 'https://gnews.io/api/v4/top-headlines?lang=en&country=us&max=5&apikey=' + GNEWS_KEY;
+  getJSON(url, function(err, data) {
+    if (err || !data || !data.articles) {
+      document.getElementById('news').innerHTML = '<span class="err">Headlines unavailable</span>';
+      return;
+    }
+    var html = '';
+    var articles = data.articles.slice(0, 5);
+    for (var i = 0; i < articles.length; i++) {
+      var a = articles[i];
+      var src = a.source && a.source.name ? a.source.name : '';
+      var title = a.title || '';
+      if (title.length > 80) title = title.substring(0, 80) + '...';
+      html += '<div class="news-item"><div class="news-source">' + src + '</div><div class="news-hed">' + title + '</div></div>';
+    }
+    document.getElementById('news').innerHTML = html;
+  });
+}
+
+loadWeather();
+loadQuote();
+loadStocks();
+loadNews();
 </script>
 </body>
 </html>
